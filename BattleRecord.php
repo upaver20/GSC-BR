@@ -12,7 +12,9 @@
         $recent_db = connectDB('recent');
         $recent_userdata = $recent_db->findOne(
             ['id' => $attr],
-            ['projection' => ['_id' => 0]]
+            [
+                'projection' => ['_id' => 0]
+            ]
         );
         return $recent_userdata;
     }
@@ -194,4 +196,129 @@
         return $str;
     }
     add_shortcode('wlr_graph', 'wlr_graph');
+
+    function get_attacker_pick($attr){
+        $userdata = get_recent_userdata($attr);
+        $data = [];
+        $tmp = [];
+        foreach ($userdata->operator as $operator) {
+            $name = "'".$operator->name."'";
+            $pick = $operator->pick;
+            if ($operator->type == 'Attack') {
+                $tmp[$name] = $pick;
+            }
+        };
+        arsort($tmp);
+        $count = 0;
+        $other = 0;
+        foreach ($tmp as $key => $value) {
+            if ($count<5) {
+                $data[] = '[' . implode(',',[$key,$value]) . ']';
+            }else{
+                $other = $other + $value;
+            }
+            $count = $count + 1;
+        };
+        $data[] = '[' . implode(',',["'Other'",$other]) . ']';
+        return implode(',',$data);
+    }
+    function get_defenser_pick($attr){
+        $userdata = get_recent_userdata($attr);
+        $data = [];
+        $tmp = [];
+        foreach ($userdata->operator as $operator) {
+            $name = "'".$operator->name."'";
+            $pick = $operator->pick;
+            if ($operator->type == 'Defense') {
+                $tmp[$name] = $pick;
+            }
+        };
+        arsort($tmp);
+        $count = 0;
+        $other = 0;
+        foreach ($tmp as $key => $value) {
+            if ($count<5) {
+                $data[] = '[' . implode(',',[$key,$value]) . ']';
+            }else{
+                $other = $other + $value;
+            }
+            $count = $count + 1;
+        };
+        $data[] = '[' . implode(',',["'Other'",$other]) . ']';
+        return implode(',',$data);
+    }
+
+    function attacker_pick_graph($attr){
+        $ID = $attr[0];
+        $data = get_attacker_pick($ID);
+        $div_id = $ID . ' atpg';
+        $str  = '<div id="' . $div_id . '" style="width:50%; height:400px;"></div>';
+        $str .= '<script>jQuery(function($) {';
+        $str .= "var myChart = Highcharts.chart('" . $div_id . "', {";
+        $str .="    chart: {
+                        type: 'pie'
+                    },
+                    title: {";
+        $str .= "       text: '" . $ID . " Attacker Pick Ratio'";
+        $str .= "   },
+                    tooltip: {
+                        pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                    },
+                    plotOptions: {
+                      pie: {
+                        cursor: 'pointer',
+                        dataLabels: {
+                          enabled: true,
+                          format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                        }
+                      }
+                    },
+                    series: [{
+                        name: 'Pick Ratio',
+                        colorByPoint: true,";
+        $str .= "       data:[" . $data . "]";
+        $str .= "   }]
+                })
+                })
+                 </script>";
+        return $str;
+    }
+    add_shortcode('attacker_pick_graph', 'attacker_pick_graph');
+
+    function defenser_pick_graph($attr){
+        $ID = $attr[0];
+        $data = get_defenser_pick($ID);
+        $div_id = $ID . ' dfpg';
+        $str  = '<div id="' . $div_id . '" style="width:50%; height:400px;"></div>';
+        $str .= '<script>jQuery(function($) {';
+        $str .= "var myChart = Highcharts.chart('" . $div_id . "', {";
+        $str .="    chart: {
+                        type: 'pie'
+                    },
+                    title: {";
+        $str .= "       text: '" . $ID . " Defenser Pick Ratio'";
+        $str .= "   },
+                    tooltip: {
+                        pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                    },
+                    plotOptions: {
+                      pie: {
+                        cursor: 'pointer',
+                        dataLabels: {
+                          enabled: true,
+                          format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                        }
+                      }
+                    },
+                    series: [{
+                        name: 'Pick Ratio',
+                        colorByPoint: true,";
+        $str .= "       data:[" . $data . "]";
+        $str .= "   }]
+                })
+                })
+                 </script>";
+        return $str;
+    }
+    add_shortcode('defenser_pick_graph', 'defenser_pick_graph');
 ?>
