@@ -200,6 +200,7 @@
     function get_attacker_pick($attr){
         $userdata = get_recent_userdata($attr);
         $data = [];
+        $d_data = [];
         $tmp = [];
         foreach ($userdata->operator as $operator) {
             $name = "'".$operator->name."'";
@@ -215,16 +216,19 @@
             if ($count<5) {
                 $data[] = '[' . implode(',',[$key,$value]) . ']';
             }else{
+                $d_data[] = '[' . implode(',',[$key,$value]) . ']';
                 $other = $other + $value;
             }
             $count = $count + 1;
         };
-        $data[] = '[' . implode(',',["'Other'",$other]) . ']';
-        return implode(',',$data);
+        $data[] = "{ name: 'Other', y: " . $other . ", drilldown: 'Other' }";
+        return array(implode(',',$data),implode(',',$d_data));
     }
+
     function get_defenser_pick($attr){
         $userdata = get_recent_userdata($attr);
         $data = [];
+        $d_data =[];
         $tmp = [];
         foreach ($userdata->operator as $operator) {
             $name = "'".$operator->name."'";
@@ -240,17 +244,18 @@
             if ($count<5) {
                 $data[] = '[' . implode(',',[$key,$value]) . ']';
             }else{
+                $d_data[] = '[' . implode(',',[$key,$value]) . ']';
                 $other = $other + $value;
             }
             $count = $count + 1;
         };
-        $data[] = '[' . implode(',',["'Other'",$other]) . ']';
-        return implode(',',$data);
+        $data[] = "{ name: 'Other', y: " . $other . ", drilldown: 'Other' }";
+        return array(implode(',',$data),implode(',',$d_data));
     }
 
     function attacker_pick_graph($attr){
         $ID = $attr[0];
-        $data = get_attacker_pick($ID);
+        list($data, $d_data) = get_attacker_pick($ID);
         $div_id = $ID . ' atpg';
         $str  = '<div id="' . $div_id . '" style="width:50%; height:400px;"></div>';
         $str .= '<script>jQuery(function($) {';
@@ -276,8 +281,14 @@
                     series: [{
                         name: 'Pick Ratio',
                         colorByPoint: true,";
-        $str .= "       data:[" . $data . "]";
-        $str .= "   }]
+        $str .= "       data: [" . $data . "]";
+        $str .= "   }],
+                    drilldown: {
+                        series: [{
+                            id: 'Other',";
+        $str .= "           data: [" . $d_data . "]}]";
+        $str .= "
+                    }
                 })
                 })
                  </script>";
@@ -287,7 +298,7 @@
 
     function defenser_pick_graph($attr){
         $ID = $attr[0];
-        $data = get_defenser_pick($ID);
+        list($data, $d_data) = get_defenser_pick($ID);
         $div_id = $ID . ' dfpg';
         $str  = '<div id="' . $div_id . '" style="width:50%; height:400px;"></div>';
         $str .= '<script>jQuery(function($) {';
@@ -314,7 +325,13 @@
                         name: 'Pick Ratio',
                         colorByPoint: true,";
         $str .= "       data:[" . $data . "]";
-        $str .= "   }]
+        $str .= "   }],
+                    drilldown: {
+                        series: [{
+                            id: 'Other',";
+        $str .= "           data: [" . $d_data . "]}]";
+        $str .= "
+                    }
                 })
                 })
                  </script>";
