@@ -90,6 +90,8 @@
         };
         return  implode(',',$kdr_array);
     }
+    add_shortcode('get_kdr_casual', 'get_kdr_casual');
+
 
     function get_kdr_ranked($attr) {
         # $userdatas = get_old_userdata($attr);
