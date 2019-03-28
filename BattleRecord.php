@@ -76,10 +76,10 @@
     function get_kdr_casual($attr) {
          # $userdatas = get_old_userdata($attr);
          $old_db = connectDB('old');
-         $userdata = $old_db->find(
+         $userdatas = $old_db->find(
             ['id' => $attr],
             [
-                'projection' => ['_id' => 0,'date' => 1,'casual' => 1],
+                'projection' => ['_id' => false,'date' => true,'casual' => true],
                 'sort' => ['date' => -1]
             ]
         );
@@ -97,11 +97,11 @@
 
     function get_kdr_ranked($attr) {
         # $userdatas = get_old_userdata($attr);
-        
+        $old_db = connectDB('old');
         $userdata = $old_db->find(
             ['id' => $attr],
             [
-                'projection' => ['_id' => 0,'date' => 1,'rank->kdr' => 1],
+                'projection' => ['_id' => 0,'date' => 1,'rank' => 1],
                 'sort' => ['date' => -1]
             ]
         );
@@ -121,7 +121,7 @@
         $userdata = $old_db->find(
             ['id' => $attr],
             [
-                'projection' => ['_id' => 0,'date' => 1,'casual.wlr' => 1],
+                'projection' => ['_id' => 0,'date' => 1,'casual' => 1],
                 'sort' => ['date' => -1]
             ]
         );
@@ -141,7 +141,7 @@
         $userdata = $old_db->find(
             ['id' => $attr],
             [
-                'projection' => ['_id' => 0,'date' => 1,'rank.wlr' => 1],
+                'projection' => ['_id' => 0,'date' => 1,'rank' => 1],
                 'sort' => ['date' => -1]
             ]
         );
