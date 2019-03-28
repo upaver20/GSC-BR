@@ -90,6 +90,7 @@
             $kdr = $userdata->casual->kdr;
             $kdr_array[] = '[' . implode(',',[$date,$kdr]) . ']';
         };
+        print $kdr_array;
         return  implode(',',$kdr_array);
     }
     add_shortcode('get_kdr_casual', 'get_kdr_casual');
@@ -98,7 +99,7 @@
     function get_kdr_ranked($attr) {
         # $userdatas = get_old_userdata($attr);
         $old_db = connectDB('old');
-        $userdata = $old_db->find(
+        $userdatas = $old_db->find(
             ['id' => $attr],
             [
                 'projection' => ['_id' => 0,'date' => 1,'rank' => 1],
@@ -118,7 +119,7 @@
     function get_wlr_casual($attr) {
         # $userdatas = get_old_userdata($attr);
         $old_db = connectDB('old');
-        $userdata = $old_db->find(
+        $userdatas = $old_db->find(
             ['id' => $attr],
             [
                 'projection' => ['_id' => 0,'date' => 1,'casual' => 1],
@@ -138,7 +139,7 @@
     function get_wlr_ranked($attr) {
         # $userdatas = get_old_userdata($attr);
         $old_db = connectDB('old');
-        $userdata = $old_db->find(
+        $userdatas = $old_db->find(
             ['id' => $attr],
             [
                 'projection' => ['_id' => 0,'date' => 1,'rank' => 1],
