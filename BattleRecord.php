@@ -16,7 +16,7 @@
                 'projection' => ['_id' => 0,'uid' => 1]
             ]
         );
-        return $uid
+        return $uid->uid;
     }
 
     function get_recent_userdata($attr) {
@@ -73,7 +73,14 @@
     add_shortcode('get_icon', 'get_icon');
 
     function get_kdr_casual($attr) {
-        $userdatas = get_old_userdata($attr);
+         # $userdatas = get_old_userdata($attr);
+         $userdata = $old_db->find(
+            ['id' => $attr],
+            [
+                'projection' => ['_id' => 0,'date' => 1,'casual.kdr' => 1],
+                'sort' => ['date' => -1]
+            ]
+        );
         $kdr_array = [];
 
         foreach ($userdatas as $userdata) {
@@ -85,7 +92,15 @@
     }
 
     function get_kdr_ranked($attr) {
-        $userdatas = get_old_userdata($attr);
+        # $userdatas = get_old_userdata($attr);
+        $old_db = connectDB('old');
+        $userdata = $old_db->find(
+            ['id' => $attr],
+            [
+                'projection' => ['_id' => 0,'date' => 1,'rank.kdr' => 1],
+                'sort' => ['date' => -1]
+            ]
+        );
         $kdr_array = [];
 
         foreach ($userdatas as $userdata) {
@@ -97,7 +112,14 @@
     }
 
     function get_wlr_casual($attr) {
-        $userdatas = get_old_userdata($attr);
+        # $userdatas = get_old_userdata($attr);
+        $userdata = $old_db->find(
+            ['id' => $attr],
+            [
+                'projection' => ['_id' => 0,'date' => 1,'casual.wlr' => 1],
+                'sort' => ['date' => -1]
+            ]
+        );
         $wlr_array = [];
 
         foreach ($userdatas as $userdata) {
@@ -109,7 +131,14 @@
     }
 
     function get_wlr_ranked($attr) {
-        $userdatas = get_old_userdata($attr);
+        # $userdatas = get_old_userdata($attr);
+        $userdata = $old_db->find(
+            ['id' => $attr],
+            [
+                'projection' => ['_id' => 0,'date' => 1,'rank.wlr' => 1],
+                'sort' => ['date' => -1]
+            ]
+        );
         $wlr_array = [];
 
         foreach ($userdatas as $userdata) {
