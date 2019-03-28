@@ -12,13 +12,14 @@
     function id2uid($attr){
         $id2uid_db = connectDB('id2uid');
         $uid = $id2uid_db->findOne(
-            ['id' => $attr],
+            ['id' => $attr[0]],
             [
-                'projection' => ['_id' => 0,'uid' => 1]
+                'projection' => ['_id' => 0]
             ]
         );
         return $uid->uid;
     }
+    add_shortcode('id2uid', 'id2uid');
 
     function get_recent_userdata($attr) {
         $recent_db = connectDB('recent');
@@ -77,15 +78,15 @@
 	$old_db = connectDB('old');
 	$userdatas = $old_db->find(['id' => $attr],
 				[
-					'projection' => 
+					'projection' =>
 					[
 						'_id' => 0,
 						'date' => 1,
 						'id' => 1,
-						'casual.kdr' => 1, 
+						'casual.kdr' => 1,
                     ],
                     'sort' => ['date' => -1,],
-				]);        
+				]);
 	$kdr_array = [];
 
         foreach ($userdatas as $userdata) {
@@ -101,15 +102,15 @@
         $old_db = connectDB('old');
         $userdatas = $old_db->find(['id' => $attr],
 				[
-					'projection' => 
+					'projection' =>
 					[
 						'_id' => 0,
 						'date' => 1,
 						'id' => 1,
-						'ranked.kdr' => 1, 
+						'ranked.kdr' => 1,
                     ],
                     'sort' => ['date' => -1,],
-				]); 
+				]);
         $kdr_array = [];
 
         foreach ($userdatas as $userdata) {
@@ -125,12 +126,12 @@
         $old_db = connectDB('old');
         $userdatas = $old_db->find(['id' => $attr],
 				[
-					'projection' => 
+					'projection' =>
 					[
 						'_id' => 0,
 						'date' => 1,
 						'id' => 1,
-						'casual.wlr' => 1, 
+						'casual.wlr' => 1,
                     ],
                     'sort' => ['date' => -1,],
 				]);
@@ -149,12 +150,12 @@
         $old_db = connectDB('old');
         $userdatas = $old_db->find(['id' => $attr],
 				[
-					'projection' => 
+					'projection' =>
 					[
 						'_id' => 0,
 						'date' => 1,
 						'id' => 1,
-						'ranked.wlr' => 1, 
+						'ranked.wlr' => 1,
                     ],
                     'sort' => ['date' => -1,],
 				]);
