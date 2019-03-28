@@ -1,3 +1,4 @@
+<script src="https://code.highcharts.com/highcharts.js"></script>
 <?php
     // This path should point to Composer's autoloader
     require 'vendor/autoload.php';
@@ -327,6 +328,7 @@
         $str .= "   }],
                     drilldown: {
                         series: [{
+                            name: 'Pick Ratio',
                             id: 'Other',";
         $str .= "           data: [" . $d_data . "]}]";
         $str .= "
@@ -370,6 +372,7 @@
         $str .= "   }],
                     drilldown: {
                         series: [{
+                            name: 'Pick Ratio',
                             id: 'Other',";
         $str .= "           data: [" . $d_data . "]}]";
         $str .= "
