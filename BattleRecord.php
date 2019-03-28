@@ -75,6 +75,7 @@
 
     function get_kdr_casual($attr) {
          # $userdatas = get_old_userdata($attr);
+         $old_db = connectDB('old');
          $userdata = $old_db->find(
             ['id' => $attr],
             [
@@ -96,7 +97,7 @@
 
     function get_kdr_ranked($attr) {
         # $userdatas = get_old_userdata($attr);
-        $old_db = connectDB('old');
+        
         $userdata = $old_db->find(
             ['id' => $attr],
             [
@@ -116,6 +117,7 @@
 
     function get_wlr_casual($attr) {
         # $userdatas = get_old_userdata($attr);
+        $old_db = connectDB('old');
         $userdata = $old_db->find(
             ['id' => $attr],
             [
@@ -135,6 +137,7 @@
 
     function get_wlr_ranked($attr) {
         # $userdatas = get_old_userdata($attr);
+        $old_db = connectDB('old');
         $userdata = $old_db->find(
             ['id' => $attr],
             [
