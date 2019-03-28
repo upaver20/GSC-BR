@@ -74,23 +74,27 @@
     add_shortcode('get_icon', 'get_icon');
 
     function get_kdr_casual($attr) {
-         # $userdatas = get_old_userdata($attr);
-         $old_db = connectDB('old');
-         $userdatas = $old_db->find(
-            ['id' => $attr],
-            [
-                'projection' => ['_id' => false,'date' => true,'casual' => true],
-                'sort' => ['date' => -1]
-            ]
-        );
-        $kdr_array = [];
+	$old_db = connectDB('old');
+	$userdatas = $old_db->find(['id' => $attr[0]],
+				[
+					'projection' => 
+					[
+						'_id' => 0,
+						'date' => 1,
+						'id' => 1,
+						'casual.kdr' => 1, 
+					],
+				]);        
+	$kdr_array = [];
+	# var_dump($userdatas);
 
         foreach ($userdatas as $userdata) {
             $date = $userdata->date->toDateTime()->format('U.u')*1000;
             $kdr = $userdata->casual->kdr;
+	    # var_dump($userdata);
             $kdr_array[] = '[' . implode(',',[$date,$kdr]) . ']';
         };
-        var_dump(implode(',',$kdr_array));
+	# var_dump(implode(',',$kdr_array));
         return  implode(',',$kdr_array);
     }
     add_shortcode('get_kdr_casual', 'get_kdr_casual');
