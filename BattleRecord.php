@@ -90,7 +90,7 @@
             $kdr = $userdata->casual->kdr;
             $kdr_array[] = '[' . implode(',',[$date,$kdr]) . ']';
         };
-        print $kdr_array;
+        print_r $kdr_array;
         return  implode(',',$kdr_array);
     }
     add_shortcode('get_kdr_casual', 'get_kdr_casual');
