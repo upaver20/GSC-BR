@@ -8,6 +8,17 @@
         return $collection;
     }
 
+    function id2uid($attr){
+        $id2uid_db = connectDB('id2uid');
+        $uid = $id2uid_db->findOne(
+            ['id' => $attr],
+            [
+                'projection' => ['_id' => 0,'uid' => 1]
+            ]
+        );
+        return $uid
+    }
+
     function get_recent_userdata($attr) {
         $recent_db = connectDB('recent');
         $recent_userdata = $recent_db->findOne(
