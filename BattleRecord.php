@@ -12,14 +12,13 @@
     function id2uid($attr){
         $id2uid_db = connectDB('id2uid');
         $uid = $id2uid_db->findOne(
-            ['id' => $attr[0]],
+            ['id' => $attr],
             [
                 'projection' => ['_id' => 0]
             ]
         );
         return $uid->uid;
     }
-    add_shortcode('id2uid', 'id2uid');
 
     function get_recent_userdata($attr) {
         $recent_db = connectDB('recent');
@@ -30,18 +29,6 @@
             ]
         );
         return $recent_userdata;
-    }
-
-    function get_old_userdata($attr) {
-        $old_db = connectDB('old');
-        $old_userdata = $old_db->find(
-            ['id' => $attr],
-            [
-                'projection' => ['_id' => 0],
-                'sort' => ['date' => -1]
-            ]
-        );
-        return $old_userdata;
     }
 
     function get_kdr($attr) {
@@ -75,8 +62,9 @@
     add_shortcode('get_icon', 'get_icon');
 
     function get_kdr_casual($attr) {
-	$old_db = connectDB('old');
-	$userdatas = $old_db->find(['id' => $attr],
+    $old_db = connectDB('old');
+    $uid = id2uid($attr);
+	$userdatas = $old_db->find(['uid' => $uid],
 				[
 					'projection' =>
 					[
@@ -100,7 +88,8 @@
 
     function get_kdr_ranked($attr) {
         $old_db = connectDB('old');
-        $userdatas = $old_db->find(['id' => $attr],
+        $uid = id2uid($attr);
+        $userdatas = $old_db->find(['uid' => $uid],
 				[
 					'projection' =>
 					[
@@ -122,9 +111,9 @@
     }
 
     function get_wlr_casual($attr) {
-        # $userdatas = get_old_userdata($attr);
         $old_db = connectDB('old');
-        $userdatas = $old_db->find(['id' => $attr],
+        $uid = id2uid($attr);
+        $userdatas = $old_db->find(['uid' => $uid],
 				[
 					'projection' =>
 					[
@@ -146,9 +135,9 @@
     }
 
     function get_wlr_ranked($attr) {
-        # $userdatas = get_old_userdata($attr);
         $old_db = connectDB('old');
-        $userdatas = $old_db->find(['id' => $attr],
+        $uid = id2uid($attr);
+        $userdatas = $old_db->find(['uid' => $uid],
 				[
 					'projection' =>
 					[
