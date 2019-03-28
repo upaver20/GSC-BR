@@ -77,7 +77,7 @@
          $userdata = $old_db->find(
             ['id' => $attr],
             [
-                'projection' => ['_id' => 0,'date' => 1,'casual.kdr' => 1],
+                'projection' => ['_id' => 0,'date' => 1,'casual->kdr' => 1],
                 'sort' => ['date' => -1]
             ]
         );
@@ -97,7 +97,7 @@
         $userdata = $old_db->find(
             ['id' => $attr],
             [
-                'projection' => ['_id' => 0,'date' => 1,'rank.kdr' => 1],
+                'projection' => ['_id' => 0,'date' => 1,'rank->kdr' => 1],
                 'sort' => ['date' => -1]
             ]
         );
