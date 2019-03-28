@@ -83,33 +83,34 @@
 						'date' => 1,
 						'id' => 1,
 						'casual.kdr' => 1, 
-					],
+                    ],
+                    'sort' => ['date' => -1,],
 				]);        
 	$kdr_array = [];
-	# var_dump($userdatas);
 
         foreach ($userdatas as $userdata) {
             $date = $userdata->date->toDateTime()->format('U.u')*1000;
             $kdr = $userdata->casual->kdr;
-	    # var_dump($userdata);
             $kdr_array[] = '[' . implode(',',[$date,$kdr]) . ']';
         };
-	# var_dump(implode(',',$kdr_array));
         return  implode(',',$kdr_array);
     }
     add_shortcode('get_kdr_casual', 'get_kdr_casual');
 
 
     function get_kdr_ranked($attr) {
-        # $userdatas = get_old_userdata($attr);
         $old_db = connectDB('old');
-        $userdatas = $old_db->find(
-            ['id' => $attr],
-            [
-                'projection' => ['_id' => 0,'date' => 1,'rank' => 1],
-                'sort' => ['date' => -1]
-            ]
-        );
+        $userdatas = $old_db->find(['id' => $attr[0]],
+				[
+					'projection' => 
+					[
+						'_id' => 0,
+						'date' => 1,
+						'id' => 1,
+						'rank.kdr' => 1, 
+                    ],
+                    'sort' => ['date' => -1,],
+				]); 
         $kdr_array = [];
 
         foreach ($userdatas as $userdata) {
@@ -123,13 +124,17 @@
     function get_wlr_casual($attr) {
         # $userdatas = get_old_userdata($attr);
         $old_db = connectDB('old');
-        $userdatas = $old_db->find(
-            ['id' => $attr],
-            [
-                'projection' => ['_id' => 0,'date' => 1,'casual' => 1],
-                'sort' => ['date' => -1]
-            ]
-        );
+        $userdatas = $old_db->find(['id' => $attr[0]],
+				[
+					'projection' => 
+					[
+						'_id' => 0,
+						'date' => 1,
+						'id' => 1,
+						'casual.wlr' => 1, 
+                    ],
+                    'sort' => ['date' => -1,],
+				]);
         $wlr_array = [];
 
         foreach ($userdatas as $userdata) {
@@ -143,13 +148,17 @@
     function get_wlr_ranked($attr) {
         # $userdatas = get_old_userdata($attr);
         $old_db = connectDB('old');
-        $userdatas = $old_db->find(
-            ['id' => $attr],
-            [
-                'projection' => ['_id' => 0,'date' => 1,'rank' => 1],
-                'sort' => ['date' => -1]
-            ]
-        );
+        $userdatas = $old_db->find(['id' => $attr[0]],
+				[
+					'projection' => 
+					[
+						'_id' => 0,
+						'date' => 1,
+						'id' => 1,
+						'rank.wlr' => 1, 
+                    ],
+                    'sort' => ['date' => -1,],
+				]);
         $wlr_array = [];
 
         foreach ($userdatas as $userdata) {
