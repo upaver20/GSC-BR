@@ -1,6 +1,6 @@
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <?php
-    // This path should point to Composer's autoloader
+    /**  This path should point to Composer's autoloader **/
     require 'vendor/autoload.php';
 
     function connectDB($attr){
@@ -167,7 +167,7 @@
         $str .= '<script>jQuery(function($) {';
         $str .= "var myChart = Highcharts.chart('" . $div_id . "', {";
         $str .="    chart: {
-                        type: 'line'
+                        type: 'spline'
                     },
                     title: {";
         $str .= "       text: '" . $ID . " K/D Charts'";
@@ -187,6 +187,19 @@
                         layout: 'vertical',
                         align: 'right',
                         verticalAlign: 'middle'
+                    },
+                    plotOptions: {
+                        spline: {
+                            lineWidth: 4,
+                            states: {
+                                hover: {
+                                    lineWidth: 5
+                                }
+                            },
+                            marker: {
+                                enabled: false
+                            }
+                        }
                     },
                     series: [{
                         name: 'Casual',";
@@ -211,7 +224,7 @@
         $str .= '<script>jQuery(function($) {';
         $str .= "var myChart = Highcharts.chart('" . $div_id . "', {";
         $str .="    chart: {
-                        type: 'line'
+                        type: 'spline'
                     },
                     title: {";
         $str .= "       text: '" . $ID . " W/L Charts'";
@@ -231,6 +244,19 @@
                         layout: 'vertical',
                         align: 'right',
                         verticalAlign: 'middle'
+                    },
+                    plotOptions: {
+                        spline: {
+                            lineWidth: 4,
+                            states: {
+                                hover: {
+                                    lineWidth: 5
+                                }
+                            },
+                            marker: {
+                                enabled: false
+                            }
+                        }
                     },
                     series: [{
                         name: 'Casual',";
