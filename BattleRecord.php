@@ -15,10 +15,11 @@
             ['id' => $attr],
             [
                 'projection' => ['_id' => 0]
-            ]
-        );
+            ]);
         return $uid->uid;
-    }
+    };
+    add_shortcode('id2uid', 'id2uid');
+    
 
     function get_recent_userdata($attr) {
         $recent_db = connectDB('recent');
@@ -64,26 +65,28 @@
     function get_kdr_casual($attr) {
     $old_db = connectDB('old');
     $uid = id2uid($attr);
-	$userdatas = $old_db->find(['uid' => $uid],
-				[
-					'projection' =>
-					[
-						'_id' => 0,
-						'date' => 1,
-						'id' => 1,
-						'casual.kdr' => 1,
-                    ],
-                    'sort' => ['date' => -1,],
-				]);
-	$kdr_array = [];
-
-        foreach ($userdatas as $userdata) {
-            $date = $userdata->date->toDateTime()->format('U.u')*1000;
-            $kdr = $userdata->casual->kdr;
-            $kdr_array[] = '[' . implode(',',[$date,$kdr]) . ']';
-        };
+    $userdatas = $old_db->find(['uid' => $uid],
+                                [
+                                        'projection' =>
+                                        [
+                                                '_id' => 0,
+                                                'date' => 1,
+                                                'id' => 1,
+                                                'casual.kdr' => 1,
+                                        ]
+                                ]
+                               );
+    $kdr_array = [];
+    #$userdatas->sort(array('date' => -1));
+    foreach ($userdatas as $userdata) {
+        $date = $userdata->date->toDateTime()->format('U.u')*1000;
+        $kdr = $userdata->casual->kdr;
+        $kdr_array[] = '[' . implode(',',[$date,$kdr]) . ']';
+        # var_dump($date);
+     };
         return  implode(',',$kdr_array);
     }
+    add_shortcode('get_kdr_casual', 'get_kdr_casual' );
 
 
     function get_kdr_ranked($attr) {
@@ -97,8 +100,8 @@
 						'date' => 1,
 						'id' => 1,
 						'ranked.kdr' => 1,
-                    ],
-                    'sort' => ['date' => -1,],
+                                        ]
+                    
 				]);
         $kdr_array = [];
 
@@ -109,6 +112,7 @@
         };
         return  implode(',',$kdr_array);
     }
+    add_shortcode('get_kdr_ranked', 'get_kdr_ranked' );
 
     function get_wlr_casual($attr) {
         $old_db = connectDB('old');
@@ -121,8 +125,8 @@
 						'date' => 1,
 						'id' => 1,
 						'casual.wlr' => 1,
-                    ],
-                    'sort' => ['date' => -1,],
+                    ]
+                    
 				]);
         $wlr_array = [];
 
@@ -145,8 +149,7 @@
 						'date' => 1,
 						'id' => 1,
 						'ranked.wlr' => 1,
-                    ],
-                    'sort' => ['date' => -1,],
+                    ]
 				]);
         $wlr_array = [];
 
