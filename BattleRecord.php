@@ -115,20 +115,25 @@
         $manager = new MongoDB\Driver\Manager('mongodb://localhost:27017');
 
         try {
-            $cursor = $manager->executeQuery('r6status.old', $query);
+            $cursor = $manager->executeQuery('r6status.old', $query)->toArray();
         } catch ( Exception $ex ) {
             var_dump($ex);
         }
-
-        foreach ($cursor as $userdata) {
+        $con = count($cursor);
+        $index = 0;
+        $samples = 1000;
+        $step = round($con / $samples);
+        for ($i = 0; $i <= $samples; $i++) {
+            $index = $step * $i;
+            if ($index >= $con) break;
+            $userdata = $cursor[$index];
             $date = $userdata->date->toDateTime()->format('U.u')*1000;
             $casual_kdr = $userdata->casual->kdr;
             $ranked_kdr = $userdata->ranked->kdr;
             $casual_kdr_array[] = '[' . implode(',',[$date,$casual_kdr]) . ']';
             $ranked_kdr_array[] = '[' . implode(',',[$date,$ranked_kdr]) . ']';
-            # var_dump($date);
-         };
-            return  [implode(',',$casual_kdr_array),implode(',',$ranked_kdr_array)];
+        }
+        return  [implode(',',$casual_kdr_array),implode(',',$ranked_kdr_array)];
     }
 
     function get_wlr_both($attr) {
@@ -152,20 +157,26 @@
         $manager = new MongoDB\Driver\Manager('mongodb://localhost:27017');
 
         try {
-            $cursor = $manager->executeQuery('r6status.old', $query);
+            $cursor = $manager->executeQuery('r6status.old', $query)->toArray();
         } catch ( Exception $ex ) {
             var_dump($ex);
         }
 
-        foreach ($cursor as $userdata) {
+        $con = count($cursor);
+        $index = 0;
+        $samples = 1000;
+        $step = round($con / $samples);
+        for ($i = 0; $i <= $samples; $i++) {
+            $index = $step * $i;
+            if ($index >= $con) break;
+            $userdata = $cursor[$index];
             $date = $userdata->date->toDateTime()->format('U.u')*1000;
             $casual_wlr = $userdata->casual->wlr;
             $ranked_wlr = $userdata->ranked->wlr;
             $casual_wlr_array[] = '[' . implode(',',[$date,$casual_wlr]) . ']';
             $ranked_wlr_array[] = '[' . implode(',',[$date,$ranked_wlr]) . ']';
-            # var_dump($date);
-         };
-            return  [implode(',',$casual_wlr_array),implode(',',$ranked_wlr_array)];
+        }
+        return  [implode(',',$casual_wlr_array),implode(',',$ranked_wlr_array)];
     }
 
     function kdr_graph($attr){
