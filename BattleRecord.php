@@ -10,15 +10,31 @@
     }
 
     function id2uid($attr){
-        $id2uid_db = connectDB('id2uid');
-        $uid = $id2uid_db->findOne(
-            ['id' => $attr],
+        $filter = ['id' => $attr];
+        $options = [
+            'projection' =>
             [
-                'projection' => ['_id' => 0]
-            ]);
-        return $uid->uid;
+                    '_id' => 0,
+                    'uid' => 1
+            ],
+            'sort' => [
+                'date' => -1,
+            ],
+            'limit' => 1
+        ];
+
+        $query = new MongoDB\Driver\Query($filter, $options);
+        $manager = new MongoDB\Driver\Manager('mongodb://localhost:27017');
+
+        try {
+            $cursor = $manager->executeQuery('r6status.id2uid', $query);
+        } catch ( Exception $ex ) {
+            var_dump($ex);
+        }
+        $doc = $cursor->toArray();
+        return $doc[0]->uid;
     };
-    add_shortcode('id2uid', 'id2uid');
+    add_shortcode('id2uid_new', 'id2uid_new');
 
     function get_recent_userdata($attr) {
         $uid = id2uid($attr);
