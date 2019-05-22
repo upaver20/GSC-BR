@@ -29,7 +29,7 @@ use MongoDB\Exception\UnsupportedException;
  * @see \MongoDB\Collection::findOneAndUpdate()
  * @see http://docs.mongodb.org/manual/reference/command/findAndModify/
  */
-class FindOneAndUpdate implements Executable
+class FindOneAndUpdate implements Executable, Explainable
 {
     const RETURN_DOCUMENT_BEFORE = 1;
     const RETURN_DOCUMENT_AFTER = 2;
@@ -40,6 +40,9 @@ class FindOneAndUpdate implements Executable
      * Constructs a findAndModify command for updating a document.
      *
      * Supported options:
+     *
+     *  * arrayFilters (document array): A set of filters specifying to which
+     *    array elements an update should apply.
      *
      *  * bypassDocumentValidation (boolean): If true, allows the write to
      *    circumvent document level validation.
@@ -63,6 +66,10 @@ class FindOneAndUpdate implements Executable
      *    FindOneAndUpdate::RETURN_DOCUMENT_BEFORE or
      *    FindOneAndUpdate::RETURN_DOCUMENT_AFTER. The default is
      *    FindOneAndUpdate::RETURN_DOCUMENT_BEFORE.
+     *
+     *  * session (MongoDB\Driver\Session): Client session.
+     *
+     *    Sessions are not supported for server versions < 3.6.
      *
      *  * sort (document): Determines which document the operation modifies if
      *    the query selects multiple documents.
@@ -143,5 +150,10 @@ class FindOneAndUpdate implements Executable
     public function execute(Server $server)
     {
         return $this->findAndModify->execute($server);
+    }
+
+    public function getCommandDocument(Server $server)
+    {
+        return $this->findAndModify->getCommandDocument($server);
     }
 }

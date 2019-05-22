@@ -20,6 +20,7 @@ namespace MongoDB\Operation;
 use MongoDB\Driver\Command;
 use MongoDB\Driver\Query;
 use MongoDB\Driver\Server;
+use MongoDB\Driver\Session;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Model\CachingIterator;
@@ -36,8 +37,6 @@ use MongoDB\Model\CollectionInfoLegacyIterator;
  */
 class ListCollections implements Executable
 {
-    private static $wireVersionForCommand = 3;
-
     private $databaseName;
     private $options;
 
@@ -50,6 +49,10 @@ class ListCollections implements Executable
      *
      *  * maxTimeMS (integer): The maximum amount of time to allow the query to
      *    run.
+     *
+     *  * session (MongoDB\Driver\Session): Client session.
+     *
+     *    Sessions are not supported for server versions < 3.6.
      *
      * @param string $databaseName Database name
      * @param array  $options      Command options
@@ -65,6 +68,10 @@ class ListCollections implements Executable
             throw InvalidArgumentException::invalidType('"maxTimeMS" option', $options['maxTimeMS'], 'integer');
         }
 
+        if (isset($options['session']) && ! $options['session'] instanceof Session) {
+            throw InvalidArgumentException::invalidType('"session" option', $options['session'], 'MongoDB\Driver\Session');
+        }
+
         $this->databaseName = (string) $databaseName;
         $this->options = $options;
     }
@@ -75,14 +82,31 @@ class ListCollections implements Executable
      * @see Executable::execute()
      * @param Server $server
      * @return CollectionInfoIterator
-     * @throws InvalidArgumentException if filter.name is not a string for legacy execution
      * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
      */
     public function execute(Server $server)
     {
-        return \MongoDB\server_supports_feature($server, self::$wireVersionForCommand)
-            ? $this->executeCommand($server)
-            : $this->executeLegacy($server);
+        return $this->executeCommand($server);
+    }
+
+    /**
+     * Create options for executing the command.
+     *
+     * Note: read preference is intentionally omitted, as the spec requires that
+     * the command be executed on the primary.
+     *
+     * @see http://php.net/manual/en/mongodb-driver-server.executecommand.php
+     * @return array
+     */
+    private function createOptions()
+    {
+        $options = [];
+
+        if (isset($this->options['session'])) {
+            $options['session'] = $this->options['session'];
+        }
+
+        return $options;
     }
 
     /**
@@ -105,40 +129,9 @@ class ListCollections implements Executable
             $cmd['maxTimeMS'] = $this->options['maxTimeMS'];
         }
 
-        $cursor = $server->executeCommand($this->databaseName, new Command($cmd));
+        $cursor = $server->executeCommand($this->databaseName, new Command($cmd), $this->createOptions());
         $cursor->setTypeMap(['root' => 'array', 'document' => 'array']);
 
         return new CollectionInfoCommandIterator(new CachingIterator($cursor));
-    }
-
-    /**
-     * Returns information for all collections in this database by querying the
-     * "system.namespaces" collection (MongoDB <3.0).
-     *
-     * @param Server $server
-     * @return CollectionInfoLegacyIterator
-     * @throws InvalidArgumentException if filter.name is not a string
-     * @throws DriverRuntimeException for other driver errors (e.g. connection errors)
-     */
-    private function executeLegacy(Server $server)
-    {
-        $filter = empty($this->options['filter']) ? [] : (array) $this->options['filter'];
-
-        if (array_key_exists('name', $filter)) {
-            if ( ! is_string($filter['name'])) {
-                throw InvalidArgumentException::invalidType('filter name for MongoDB <3.0', $filter['name'], 'string');
-            }
-
-            $filter['name'] = $this->databaseName . '.' . $filter['name'];
-        }
-
-        $options = isset($this->options['maxTimeMS'])
-            ? ['modifiers' => ['$maxTimeMS' => $this->options['maxTimeMS']]]
-            : [];
-
-        $cursor = $server->executeQuery($this->databaseName . '.system.namespaces', new Query($filter, $options));
-        $cursor->setTypeMap(['root' => 'array', 'document' => 'array']);
-
-        return new CollectionInfoLegacyIterator(new CachingIterator($cursor));
     }
 }

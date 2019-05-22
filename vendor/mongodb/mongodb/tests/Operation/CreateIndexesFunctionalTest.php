@@ -2,6 +2,7 @@
 
 namespace MongoDB\Tests\Operation;
 
+use MongoDB\Driver\Exception\RuntimeException;
 use MongoDB\Model\IndexInfo;
 use MongoDB\Operation\CreateIndexes;
 use MongoDB\Operation\DropIndexes;
@@ -12,8 +13,6 @@ use stdClass;
 
 class CreateIndexesFunctionalTest extends FunctionalTestCase
 {
-    private static $wireVersionForCommand = 2;
-
     public function testCreateSparseUniqueIndex()
     {
         $indexes = [['key' => ['x' => 1], 'sparse' => true, 'unique' => true]];
@@ -115,59 +114,21 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
         });
     }
 
-    /**
-     * @expectedException MongoDB\Driver\Exception\RuntimeException
-     */
     public function testCreateConflictingIndexesWithCommand()
     {
-        if ( ! \MongoDB\server_supports_feature($this->getPrimaryServer(), self::$wireVersionForCommand)) {
-            $this->markTestSkipped('createIndexes command is not supported');
-        }
-
         $indexes = [
             ['key' => ['x' => 1], 'sparse' => true, 'unique' => false],
             ['key' => ['x' => 1], 'sparse' => false, 'unique' => true],
         ];
 
         $operation = new CreateIndexes($this->getDatabaseName(), $this->getCollectionName(), $indexes);
-        $createdIndexNames = $operation->execute($this->getPrimaryServer());
-    }
 
-    public function testCreateConflictingIndexesWithLegacyInsert()
-    {
-        if (\MongoDB\server_supports_feature($this->getPrimaryServer(), self::$wireVersionForCommand)) {
-            $this->markTestSkipped('Index creation does not use legacy insertion');
-        }
-
-        $indexes = [
-            ['key' => ['x' => 1], 'sparse' => true, 'unique' => false],
-            ['key' => ['x' => 1], 'sparse' => false, 'unique' => true],
-        ];
-
-        $operation = new CreateIndexes($this->getDatabaseName(), $this->getCollectionName(), $indexes);
-        $createdIndexNames = $operation->execute($this->getPrimaryServer());
-
-        /* When creating indexes with legacy insert operations, the server
-         * ignores conflicting index specifications and leaves the original
-         * index in place.
-         */
-        $this->assertSame('x_1', $createdIndexNames[0]);
-        $this->assertIndexExists('x_1', function(IndexInfo $info) {
-            $this->assertTrue($info->isSparse());
-            $this->assertFalse($info->isUnique());
-            $this->assertFalse($info->isTtl());
-        });
+        $this->expectException(RuntimeException::class);
+        $operation->execute($this->getPrimaryServer());
     }
 
     public function testDefaultWriteConcernIsOmitted()
     {
-        /* Earlier server versions do not support the createIndexes command. Per
-         * the Index Management specification, inserts on system.indexes must
-         * use the write concern {w:1}. */
-        if ( ! \MongoDB\server_supports_feature($this->getPrimaryServer(), self::$wireVersionForCommand)) {
-            $this->markTestSkipped('createIndexes command is not supported');
-        }
-
         (new CommandObserver)->observe(
             function() {
                 $operation = new CreateIndexes(
@@ -179,8 +140,31 @@ class CreateIndexesFunctionalTest extends FunctionalTestCase
 
                 $operation->execute($this->getPrimaryServer());
             },
-            function(stdClass $command) {
-                $this->assertObjectNotHasAttribute('writeConcern', $command);
+            function(array $event) {
+                $this->assertObjectNotHasAttribute('writeConcern', $event['started']->getCommand());
+            }
+        );
+    }
+
+    public function testSessionOption()
+    {
+        if (version_compare($this->getServerVersion(), '3.6.0', '<')) {
+            $this->markTestSkipped('Sessions are not supported');
+        }
+
+        (new CommandObserver)->observe(
+            function() {
+                $operation = new CreateIndexes(
+                    $this->getDatabaseName(),
+                    $this->getCollectionName(),
+                    [['key' => ['x' => 1]]],
+                    ['session' => $this->createSession()]
+                );
+
+                $operation->execute($this->getPrimaryServer());
+            },
+            function(array $event) {
+                $this->assertObjectHasAttribute('lsid', $event['started']->getCommand());
             }
         );
     }

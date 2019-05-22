@@ -22,10 +22,11 @@ use MongoDB\Driver\Query;
 use MongoDB\Driver\ReadConcern;
 use MongoDB\Driver\ReadPreference;
 use MongoDB\Driver\Server;
+use MongoDB\Driver\Session;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Exception\InvalidArgumentException;
 use MongoDB\Exception\UnsupportedException;
-
+use MongoDB\Model\BSONDocument;
 /**
  * Operation for the find command.
  *
@@ -34,7 +35,7 @@ use MongoDB\Exception\UnsupportedException;
  * @see http://docs.mongodb.org/manual/tutorial/query-documents/
  * @see http://docs.mongodb.org/manual/reference/operator/query-modifier/
  */
-class Find implements Executable
+class Find implements Executable, Explainable
 {
     const NON_TAILABLE = 1;
     const TAILABLE = 2;
@@ -84,6 +85,8 @@ class Find implements Executable
      *  * maxScan (integer): Maximum number of documents or index keys to scan
      *    when executing the query.
      *
+     *    This option has been deprecated since version 1.4.
+     *
      *  * maxTimeMS (integer): The maximum amount of time to allow the query to
      *    run. If "$maxTimeMS" also exists in the modifiers document, this
      *    option will take precedence.
@@ -114,6 +117,10 @@ class Find implements Executable
      *  * returnKey (boolean): If true, returns only the index keys in the
      *    resulting documents.
      *
+     *  * session (MongoDB\Driver\Session): Client session.
+     *
+     *    Sessions are not supported for server versions < 3.6.
+     *
      *  * showRecordId (boolean): Determines whether to return the record
      *    identifier for each document. If true, adds a field $recordId to the
      *    returned documents.
@@ -122,6 +129,8 @@ class Find implements Executable
      *
      *  * snapshot (boolean): Prevents the cursor from returning a document more
      *    than once because of an intervening write operation.
+     *
+     *    This options has been deprecated since version 1.4.
      *
      *  * sort (document): The order in which to return matching documents. If
      *    "$orderby" also exists in the modifiers document, this option will
@@ -226,6 +235,10 @@ class Find implements Executable
             throw InvalidArgumentException::invalidType('"returnKey" option', $options['returnKey'], 'boolean');
         }
 
+        if (isset($options['session']) && ! $options['session'] instanceof Session) {
+            throw InvalidArgumentException::invalidType('"session" option', $options['session'], 'MongoDB\Driver\Session');
+        }
+
         if (isset($options['showRecordId']) && ! is_bool($options['showRecordId'])) {
             throw InvalidArgumentException::invalidType('"showRecordId" option', $options['showRecordId'], 'boolean');
         }
@@ -248,6 +261,14 @@ class Find implements Executable
 
         if (isset($options['readConcern']) && $options['readConcern']->isDefault()) {
             unset($options['readConcern']);
+        }
+
+        if (isset($options['snapshot'])) {
+            trigger_error('The "snapshot" option is deprecated and will be removed in a future release', E_USER_DEPRECATED);
+        }
+
+        if (isset($options['maxScan'])) {
+            trigger_error('The "maxScan" option is deprecated and will be removed in a future release', E_USER_DEPRECATED);
         }
 
         $this->databaseName = (string) $databaseName;
@@ -275,9 +296,7 @@ class Find implements Executable
             throw UnsupportedException::readConcernNotSupported();
         }
 
-        $readPreference = isset($this->options['readPreference']) ? $this->options['readPreference'] : null;
-
-        $cursor = $server->executeQuery($this->databaseName . '.' . $this->collectionName, $this->createQuery(), $readPreference);
+        $cursor = $server->executeQuery($this->databaseName . '.' . $this->collectionName, new Query($this->filter, $this->createQueryOptions()), $this->createExecuteOptions());
 
         if (isset($this->options['typeMap'])) {
             $cursor->setTypeMap($this->options['typeMap']);
@@ -286,12 +305,81 @@ class Find implements Executable
         return $cursor;
     }
 
+    public function getCommandDocument(Server $server)
+    {
+        return $this->createCommandDocument();
+    }
+
     /**
-     * Create the find query.
-     *
-     * @return Query
+     * Construct a command document for Find
      */
-    private function createQuery()
+    private function createCommandDocument()
+    {
+        $cmd = ['find' => $this->collectionName, 'filter' => (object) $this->filter];
+
+        $options = $this->createQueryOptions();
+
+        if (empty($options)) {
+            return $cmd;
+        }
+
+        // maxAwaitTimeMS is a Query level option so should not be considered here
+        unset($options['maxAwaitTimeMS']);
+
+        $modifierFallback = [
+            ['allowPartialResults', 'partial'],
+            ['comment', '$comment'],
+            ['hint', '$hint'],
+            ['maxScan', '$maxScan'],
+            ['max', '$max'],
+            ['maxTimeMS', '$maxTimeMS'],
+            ['min', '$min'],
+            ['returnKey', '$returnKey'],
+            ['showRecordId', '$showDiskLoc'],
+            ['sort', '$orderby'],
+            ['snapshot', '$snapshot'],
+        ];
+
+        foreach ($modifierFallback as $modifier) {
+            if ( ! isset($options[$modifier[0]]) && isset($options['modifiers'][$modifier[1]])) {
+                $options[$modifier[0]] = $options['modifiers'][$modifier[1]];
+            }
+        }
+        unset($options['modifiers']);
+
+        return $cmd + $options;
+    }
+
+    /**
+     * Create options for executing the command.
+     *
+     * @see http://php.net/manual/en/mongodb-driver-server.executequery.php
+     * @return array
+     */
+    private function createExecuteOptions()
+    {
+        $options = [];
+
+        if (isset($this->options['readPreference'])) {
+            $options['readPreference'] = $this->options['readPreference'];
+        }
+
+        if (isset($this->options['session'])) {
+            $options['session'] = $this->options['session'];
+        }
+
+        return $options;
+    }
+
+    /**
+     * Create options for the find query.
+     *
+     * Note that these are separate from the options for executing the command,
+     * which are created in createExecuteOptions().
+     *
+     * @return array
+     */
+    private function createQueryOptions()
     {
         $options = [];
 
@@ -323,6 +411,6 @@ class Find implements Executable
             $options['modifiers'] = $modifiers;
         }
 
-        return new Query($this->filter, $options);
+        return $options;
     }
 }

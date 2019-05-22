@@ -115,12 +115,23 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
                     array_diff_key($operation['arguments'], ['pipeline' => 1])
                 );
 
+            case 'bulkWrite':
+                $results = $this->prepareBulkWriteArguments($operation['arguments']);
+                return $this->collection->bulkWrite(
+                    array_diff_key($results, ['options' => 1]),
+                    $results['options']
+                );
+
             case 'count':
+            case 'countDocuments':
             case 'find':
                 return $this->collection->{$operation['name']}(
                     isset($operation['arguments']['filter']) ? $operation['arguments']['filter'] : [],
                     array_diff_key($operation['arguments'], ['filter' => 1])
                 );
+
+            case 'estimatedDocumentCount':
+                return $this->collection->estimatedDocumentCount($operation['arguments']);
 
             case 'deleteMany':
             case 'deleteOne':
@@ -224,7 +235,41 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
                 }
                 break;
 
+            case 'bulkWrite':
+                if (isset($expectedResult['deletedCount'])) {
+                    $this->assertSame($expectedResult['deletedCount'], $actualResult->getDeletedCount());
+                }
+
+                if (isset($expectedResult['insertedIds'])) {
+                    $this->assertSameDocument(
+                        ['insertedIds' => $expectedResult['insertedIds']],
+                        ['insertedIds' => $actualResult->getInsertedIds()]
+                    );
+                }
+
+                if (isset($expectedResult['matchedCount'])) {
+                    $this->assertSame($expectedResult['matchedCount'], $actualResult->getMatchedCount());
+                }
+
+                if (isset($expectedResult['modifiedCount'])) {
+                    $this->assertSame($expectedResult['modifiedCount'], $actualResult->getModifiedCount());
+                }
+
+                if (isset($expectedResult['upsertedCount'])) {
+                    $this->assertSame($expectedResult['upsertedCount'], $actualResult->getUpsertedCount());
+                }
+
+                if (array_key_exists('upsertedId', $expectedResult)) {
+                    $this->assertSameDocument(
+                        ['upsertedId' => $expectedResult['upsertedId']],
+                        ['upsertedId' => $actualResult->getUpsertedId()]
+                    );
+                }
+                break;
+
             case 'count':
+            case 'countDocuments':
+            case 'estimatedDocumentCount':
                 $this->assertSame($expectedResult, $actualResult);
                 break;
 
@@ -313,7 +358,7 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
                 break;
 
             default:
-                throw new LogicException('Unsupported operation: ' . $operationName);
+                throw new LogicException('Unsupported operation: ' . $operation['name']);
         }
     }
 
@@ -332,6 +377,38 @@ class CrudSpecFunctionalTest extends FunctionalTestCase
         if ( ! empty($expectedData)) {
             $this->expectedCollection->insertMany($expectedData);
         }
+    }
+
+    private function prepareBulkWriteArguments($arguments)
+    {
+        $operations = [];
+        $operations['options'] = $arguments['options'];
+        foreach ($arguments['requests'] as $request) {
+            $innerArray = [];
+            switch ($request['name']) {
+                case 'deleteMany':
+                case 'deleteOne':
+                    $options = array_diff_key($request['arguments'], ['filter' => 1]);
+                    $innerArray = [$request['arguments']['filter'], $options];
+                break;
+                case 'insertOne':
+                    $innerArray = [$request['arguments']['document']];
+                    break;
+                case 'replaceOne':
+                    $options = array_diff_key($request['arguments'], ['filter' => 1, 'replacement' => 1]);
+                    $innerArray = [$request['arguments']['filter'], $request['arguments']['replacement'], $options];
+                break;
+                case 'updateMany':
+                case 'updateOne':
+                    $options = array_diff_key($request['arguments'], ['filter' => 1, 'update' => 1]);
+                    $innerArray = [$request['arguments']['filter'], $request['arguments']['update'], $options];
+                break;
+                default:
+                    throw new LogicException('Unsupported bulk write request: ' . $request['name']);
+            }
+            $operations[] = [$request['name'] => $innerArray];
+        }
+        return $operations;
     }
 
     /**

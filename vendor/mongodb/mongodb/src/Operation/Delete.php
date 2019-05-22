@@ -20,6 +20,7 @@ namespace MongoDB\Operation;
 use MongoDB\DeleteResult;
 use MongoDB\Driver\BulkWrite as Bulk;
 use MongoDB\Driver\Server;
+use MongoDB\Driver\Session;
 use MongoDB\Driver\WriteConcern;
 use MongoDB\Driver\Exception\RuntimeException as DriverRuntimeException;
 use MongoDB\Exception\InvalidArgumentException;
@@ -34,7 +35,7 @@ use MongoDB\Exception\UnsupportedException;
  * @internal
  * @see http://docs.mongodb.org/manual/reference/command/delete/
  */
-class Delete implements Executable
+class Delete implements Executable, Explainable
 {
     private static $wireVersionForCollation = 5;
 
@@ -53,6 +54,10 @@ class Delete implements Executable
      *
      *    This is not supported for server versions < 3.4 and will result in an
      *    exception at execution time if used.
+     *
+     *  * session (MongoDB\Driver\Session): Client session.
+     *
+     *    Sessions are not supported for server versions < 3.6.
      *
      *  * writeConcern (MongoDB\Driver\WriteConcern): Write concern.
      *
@@ -77,6 +82,10 @@ class Delete implements Executable
 
         if (isset($options['collation']) && ! is_array($options['collation']) && ! is_object($options['collation'])) {
             throw InvalidArgumentException::invalidType('"collation" option', $options['collation'], 'array or object');
+        }
+
+        if (isset($options['session']) && ! $options['session'] instanceof Session) {
+            throw InvalidArgumentException::invalidType('"session" option', $options['session'], 'MongoDB\Driver\Session');
         }
 
         if (isset($options['writeConcern']) && ! $options['writeConcern'] instanceof WriteConcern) {
@@ -108,18 +117,62 @@ class Delete implements Executable
             throw UnsupportedException::collationNotSupported();
         }
 
+        $bulk = new Bulk();
+        $bulk->delete($this->filter, $this->createDeleteOptions());
+
+        $writeResult = $server->executeBulkWrite($this->databaseName . '.' . $this->collectionName, $bulk, $this->createExecuteOptions());
+
+        return new DeleteResult($writeResult);
+    }
+
+    public function getCommandDocument(Server $server)
+    {
+        $cmd = ['delete' => $this->collectionName, 'deletes' => [['q' => $this->filter] + $this->createDeleteOptions()]];
+
+        if (isset($this->options['writeConcern'])) {
+            $cmd['writeConcern'] = $this->options['writeConcern'];
+        }
+
+        return $cmd;
+    }
+
+    /**
+     * Create options for the delete command.
+     *
+     * Note that these options are different from the bulk write options, which
+     * are created in createExecuteOptions().
+     *
+     * @return array
+     */
+    private function createDeleteOptions()
+    {
         $deleteOptions = ['limit' => $this->limit];
 
         if (isset($this->options['collation'])) {
             $deleteOptions['collation'] = (object) $this->options['collation'];
         }
 
-        $bulk = new Bulk();
-        $bulk->delete($this->filter, $deleteOptions);
+        return $deleteOptions;
+    }
 
-        $writeConcern = isset($this->options['writeConcern']) ? $this->options['writeConcern'] : null;
-        $writeResult = $server->executeBulkWrite($this->databaseName . '.' . $this->collectionName, $bulk, $writeConcern);
+    /**
+     * Create options for executing the bulk write.
+     *
+     * @see http://php.net/manual/en/mongodb-driver-server.executebulkwrite.php
+     * @return array
+     */
+    private function createExecuteOptions()
+    {
+        $options = [];
 
-        return new DeleteResult($writeResult);
+        if (isset($this->options['session'])) {
+            $options['session'] = $this->options['session'];
+        }
+
+        if (isset($this->options['writeConcern'])) {
+            $options['writeConcern'] = $this->options['writeConcern'];
+        }
+
+        return $options;
     }
 }

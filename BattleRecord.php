@@ -19,17 +19,33 @@
         return $uid->uid;
     };
     add_shortcode('id2uid', 'id2uid');
-    
 
     function get_recent_userdata($attr) {
-        $recent_db = connectDB('recent');
-        $recent_userdata = $recent_db->findOne(
-            ['id' => $attr],
+        $uid = id2uid($attr);
+
+        $filter = ['uid' => $uid];
+        $options = [
+            'projection' =>
             [
-                'projection' => ['_id' => 0]
-            ]
-        );
-        return $recent_userdata;
+                    '_id' => 0
+            ],
+            'sort' => [
+                'date' => -1,
+            ],
+            'limit' => 1
+        ];
+
+        $query = new MongoDB\Driver\Query($filter, $options);
+        $manager = new MongoDB\Driver\Manager('mongodb://localhost:27017');
+
+        try {
+            $cursor = $manager->executeQuery('r6status.recent', $query);
+        } catch ( Exception $ex ) {
+            var_dump($ex);
+        }
+        $doc = $cursor->toArray();
+
+        return $doc[0];
     }
 
     function get_kdr($attr) {
@@ -62,109 +78,83 @@
     }
     add_shortcode('get_icon', 'get_icon');
 
-    function get_kdr_casual($attr) {
-    $old_db = connectDB('old');
-    $uid = id2uid($attr);
-    $userdatas = $old_db->find(['uid' => $uid],
-                                [
-                                        'projection' =>
-                                        [
-                                                '_id' => 0,
-                                                'date' => 1,
-                                                'id' => 1,
-                                                'casual.kdr' => 1,
-                                        ]
-                                ]
-                               );
-    $kdr_array = [];
-    #$userdatas->sort(array('date' => -1));
-    foreach ($userdatas as $userdata) {
-        $date = $userdata->date->toDateTime()->format('U.u')*1000;
-        $kdr = $userdata->casual->kdr;
-        $kdr_array[] = '[' . implode(',',[$date,$kdr]) . ']';
-        # var_dump($date);
-     };
-        return  implode(',',$kdr_array);
-    }
-    add_shortcode('get_kdr_casual', 'get_kdr_casual' );
-
-
-    function get_kdr_ranked($attr) {
-        $old_db = connectDB('old');
+    function get_kdr_both($attr) {
         $uid = id2uid($attr);
-        $userdatas = $old_db->find(['uid' => $uid],
-				[
-					'projection' =>
-					[
-						'_id' => 0,
-						'date' => 1,
-						'id' => 1,
-						'ranked.kdr' => 1,
-                                        ]
-                    
-				]);
-        $kdr_array = [];
 
-        foreach ($userdatas as $userdata) {
+        $filter = ['uid' => $uid];
+        $options = [
+            'projection' =>
+            [
+                    '_id' => 0,
+                    'date' => 1,
+                    'casual.kdr' => 1,
+                    'ranked.kdr' => 1,
+            ],
+            'sort' => [
+                'date' => -1,
+            ]
+        ];
+
+        $query = new MongoDB\Driver\Query($filter, $options);
+        $manager = new MongoDB\Driver\Manager('mongodb://localhost:27017');
+
+        try {
+            $cursor = $manager->executeQuery('r6status.old', $query);
+        } catch ( Exception $ex ) {
+            var_dump($ex);
+        }
+
+        foreach ($cursor as $userdata) {
             $date = $userdata->date->toDateTime()->format('U.u')*1000;
-            $kdr = $userdata->ranked->kdr;
-            $kdr_array[] = '[' . implode(',',[$date,$kdr]) . ']';
-        };
-        return  implode(',',$kdr_array);
-    }
-    add_shortcode('get_kdr_ranked', 'get_kdr_ranked' );
-
-    function get_wlr_casual($attr) {
-        $old_db = connectDB('old');
-        $uid = id2uid($attr);
-        $userdatas = $old_db->find(['uid' => $uid],
-				[
-					'projection' =>
-					[
-						'_id' => 0,
-						'date' => 1,
-						'id' => 1,
-						'casual.wlr' => 1,
-                    ]
-                    
-				]);
-        $wlr_array = [];
-
-        foreach ($userdatas as $userdata) {
-            $date = $userdata->date->toDateTime()->format('U.u')*1000;
-            $wlr = $userdata->casual->wlr;
-            $wlr_array[] = '[' . implode(',',[$date,$wlr]) . ']';
-        };
-        return  implode(',',$wlr_array);
+            $casual_kdr = $userdata->casual->kdr;
+            $ranked_kdr = $userdata->ranked->kdr;
+            $casual_kdr_array[] = '[' . implode(',',[$date,$casual_kdr]) . ']';
+            $ranked_kdr_array[] = '[' . implode(',',[$date,$ranked_kdr]) . ']';
+            # var_dump($date);
+         };
+            return  [implode(',',$casual_kdr_array),implode(',',$ranked_kdr_array)];
     }
 
-    function get_wlr_ranked($attr) {
-        $old_db = connectDB('old');
+    function get_wlr_both($attr) {
         $uid = id2uid($attr);
-        $userdatas = $old_db->find(['uid' => $uid],
-				[
-					'projection' =>
-					[
-						'_id' => 0,
-						'date' => 1,
-						'id' => 1,
-						'ranked.wlr' => 1,
-                    ]
-				]);
-        $wlr_array = [];
 
-        foreach ($userdatas as $userdata) {
+        $filter = ['uid' => $uid];
+        $options = [
+            'projection' =>
+            [
+                    '_id' => 0,
+                    'date' => 1,
+                    'casual.wlr' => 1,
+                    'ranked.wlr' => 1,
+            ],
+            'sort' => [
+                'date' => -1,
+            ]
+        ];
+
+        $query = new MongoDB\Driver\Query($filter, $options);
+        $manager = new MongoDB\Driver\Manager('mongodb://localhost:27017');
+
+        try {
+            $cursor = $manager->executeQuery('r6status.old', $query);
+        } catch ( Exception $ex ) {
+            var_dump($ex);
+        }
+
+        foreach ($cursor as $userdata) {
             $date = $userdata->date->toDateTime()->format('U.u')*1000;
-            $wlr = $userdata->ranked->wlr;
-            $wlr_array[] = '[' . implode(',',[$date,$wlr]) . ']';
-        };
-        return  implode(',',$wlr_array);
+            $casual_wlr = $userdata->casual->wlr;
+            $ranked_wlr = $userdata->ranked->wlr;
+            $casual_wlr_array[] = '[' . implode(',',[$date,$casual_wlr]) . ']';
+            $ranked_wlr_array[] = '[' . implode(',',[$date,$ranked_wlr]) . ']';
+            # var_dump($date);
+         };
+            return  [implode(',',$casual_wlr_array),implode(',',$ranked_wlr_array)];
     }
 
     function kdr_graph($attr){
         $ID = $attr[0];
-        $casual = get_kdr_casual($ID);
-        $ranked = get_kdr_ranked($ID);
+        list($casual, $ranked) = get_kdr_both($ID);
         $div_id = $ID . ' kdr';
         $str  = '<div id="' . $div_id . '" style="width:100%; height:400px;"></div>';
         $str .= '<script>jQuery(function($) {';
@@ -220,8 +210,7 @@
 
     function wlr_graph($attr){
         $ID = $attr[0];
-        $casual = get_wlr_casual($ID);
-        $ranked = get_wlr_ranked($ID);
+        list($casual, $ranked) = get_wlr_both($ID);
         $div_id = $ID . ' wlr';
         $str  = '<div id="' . $div_id . '" style="width:100%; height:400px;"></div>';
         $str .= '<script>jQuery(function($) {';
@@ -274,6 +263,7 @@
         return $str;
     }
     add_shortcode('wlr_graph', 'wlr_graph');
+
 
     function get_attacker_pick($attr){
         $userdata = get_recent_userdata($attr);
