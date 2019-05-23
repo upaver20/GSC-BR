@@ -1,4 +1,6 @@
 <script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/data.js"></script>
+<script src="https://code.highcharts.com/modules/drilldown.js"></script>
 <?php
     /**  This path should point to Composer's autoloader **/
     require 'vendor/autoload.php';
@@ -227,7 +229,35 @@
         $str .= "       }, {
                         name: 'Ranked',";
         $str .= "       data:[". $ranked ."]";
-        $str .= "   }]
+        $str .= "   }],
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                legend: {
+                                    align: 'center',
+                                    verticalAlign: 'bottom',
+                                    layout: 'horizontal'
+                                },
+                                yAxis: {
+                                    labels: {
+                                        align: 'left'
+                                    },
+                                    title: {
+                                        text: null
+                                    }
+                                },
+                                subtitle: {
+                                    text: null
+                                },
+                                credits: {
+                                    enabled: false
+                                }
+                            }
+                        }]
+                    }
                 })
                 })
                 </script>";
@@ -239,7 +269,7 @@
         $ID = $attr[0];
         list($casual, $ranked) = get_wlr_both($ID);
         $div_id = $ID . ' wlr';
-        $str  = '<div id="' . $div_id . '" style="width:100%; height:400px;"></div>';
+        $str  = '<div id="' . $div_id . '" style="width:100%; height:100%;"></div>';
         $str .= '<script>jQuery(function($) {';
         $str .= "var myChart = Highcharts.chart('" . $div_id . "', {";
         $str .="    chart: {
@@ -283,7 +313,35 @@
         $str .= "       }, {
                         name: 'Ranked',";
         $str .= "       data:[". $ranked ."]";
-        $str .= "   }]
+        $str .= "   }],
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                legend: {
+                                    align: 'center',
+                                    verticalAlign: 'bottom',
+                                    layout: 'horizontal'
+                                },
+                                yAxis: {
+                                    labels: {
+                                        align: 'left'
+                                    },
+                                    title: {
+                                        text: null
+                                    }
+                                },
+                                subtitle: {
+                                    text: null
+                                },
+                                credits: {
+                                    enabled: false
+                                }
+                            }
+                        }]
+                    }
                 })
                 })
                 </script>";
@@ -309,9 +367,9 @@
         $other = 0;
         foreach ($tmp as $key => $value) {
             if ($count<5) {
-                $data[] = '[' . implode(',',[$key,$value]) . ']';
+                $data[] = '{ name:' . $key .', y:' . $value . ', drilldown: null }';
             }else{
-                $d_data[] = '[' . implode(',',[$key,$value]) . ']';
+                $d_data[] = '{ name:' . $key .', y:' . $value . '}';
                 $other = $other + $value;
             }
             $count = $count + 1;
@@ -337,7 +395,7 @@
         $other = 0;
         foreach ($tmp as $key => $value) {
             if ($count<5) {
-                $data[] = '[' . implode(',',[$key,$value]) . ']';
+                $data[] = '{ name:' . $key .', y:' . $value . ', drilldown: null }';
             }else{
                 $d_data[] = '[' . implode(',',[$key,$value]) . ']';
                 $other = $other + $value;
@@ -352,7 +410,7 @@
         $ID = $attr[0];
         list($data, $d_data) = get_attacker_pick($ID);
         $div_id = $ID . ' atpg';
-        $str  = '<div id="' . $div_id . '" style="width:50%; height:400px;"></div>';
+        $str  = '<div id="' . $div_id . '" style="width:100%; height:100%;"></div>';
         $str .= '<script>jQuery(function($) {';
         $str .= "var myChart = Highcharts.chart('" . $div_id . "', {";
         $str .="    chart: {
@@ -362,14 +420,13 @@
         $str .= "       text: '" . $ID . " Attacker Pick Ratio'";
         $str .= "   },
                     tooltip: {
-                        pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                        pointFormat: '{series.name}: {point.percentage:.1f}%'
                     },
                     plotOptions: {
-                      pie: {
-                        cursor: 'pointer',
+                        series: {
                         dataLabels: {
                           enabled: true,
-                          format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                          format: '{point.name}: {point.percentage:.1f} %'
                         }
                       }
                     },
@@ -380,14 +437,34 @@
         $str .= "   }],
                     drilldown: {
                         series: [{
-                            name: 'Pick Ratio',
                             id: 'Other',";
         $str .= "           data: [" . $d_data . "]}]";
-        $str .= "
+        $str .= "   },
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                title: {
+                                    text: 'Attacker Pick Ratio'
+                                },
+                                plotOptions: {
+                                    series: {
+                                    dataLabels: {
+                                      enabled: false
+                                    }
+                                  }
+                                },
+                                credits: {
+                                    enabled: false
+                                }
+                            }
+                        }]
                     }
                 })
                 })
-                 </script>";
+                </script>";
         return $str;
     }
     add_shortcode('attacker_pick_graph', 'attacker_pick_graph');
@@ -396,7 +473,7 @@
         $ID = $attr[0];
         list($data, $d_data) = get_defenser_pick($ID);
         $div_id = $ID . ' dfpg';
-        $str  = '<div id="' . $div_id . '" style="width:50%; height:400px;"></div>';
+        $str  = '<div id="' . $div_id . '" style="width:100%; height:100%;"></div>';
         $str .= '<script>jQuery(function($) {';
         $str .= "var myChart = Highcharts.chart('" . $div_id . "', {";
         $str .="    chart: {
@@ -427,11 +504,32 @@
                             name: 'Pick Ratio',
                             id: 'Other',";
         $str .= "           data: [" . $d_data . "]}]";
-        $str .= "
+        $str .= "   },
+                    responsive: {
+                        rules: [{
+                            condition: {
+                                maxWidth: 500
+                            },
+                            chartOptions: {
+                                title: {
+                                    text: 'Defenser Pick Ratio'
+                                },
+                                plotOptions: {
+                                    series: {
+                                    dataLabels: {
+                                      enabled: false
+                                    }
+                                  }
+                                },
+                                credits: {
+                                    enabled: false
+                                }
+                            }
+                        }]
                     }
                 })
                 })
-                 </script>";
+                </script>";
         return $str;
     }
     add_shortcode('defenser_pick_graph', 'defenser_pick_graph');
