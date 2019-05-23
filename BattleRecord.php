@@ -132,10 +132,16 @@
         } catch ( Exception $ex ) {
             var_dump($ex);
         }
+
         $con = count($cursor);
         $index = 0;
         $samples = 1000;
-        $step = round($con / $samples);
+        if ($con <= $samples) {
+            $step = 1;
+        } else {
+            $step = round($con / $samples);
+        }
+
         for ($i = 0; $i <= $samples; $i++) {
             $index = $step * $i;
             if ($index >= $con) break;
@@ -178,7 +184,12 @@
         $con = count($cursor);
         $index = 0;
         $samples = 1000;
-        $step = round($con / $samples);
+        if ($con <= $samples) {
+            $step = 1;
+        } else {
+            $step = round($con / $samples);
+        }
+
         for ($i = 0; $i <= $samples; $i++) {
             $index = $step * $i;
             if ($index >= $con) break;
