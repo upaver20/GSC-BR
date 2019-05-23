@@ -90,6 +90,17 @@
     }
     add_shortcode('get_rank', 'get_rank');
 
+    function get_recent_id($attr) {
+        if (gettype($attr) == 'string') {
+            $id = $attr;
+        } else {
+            $id = $attr[0];
+        }
+        $userdata = get_recent_userdata($id);
+        return $userdata->id;
+    }
+    add_shortcode('get_recent_id', 'get_recent_id');
+
     function get_icon($attr) {
         $userdata = get_recent_userdata($attr[0]);
         return $userdata->icon;
@@ -109,7 +120,7 @@
                     'ranked.kdr' => 1,
             ],
             'sort' => [
-                'date' => -1,
+                'date' => 1,
             ]
         ];
 
@@ -151,7 +162,7 @@
                     'ranked.wlr' => 1,
             ],
             'sort' => [
-                'date' => -1,
+                'date' => 1,
             ]
         ];
 
@@ -182,9 +193,9 @@
     }
 
     function kdr_graph($attr){
-        $ID = $attr[0];
-        list($casual, $ranked) = get_kdr_both($ID);
-        $div_id = $ID . ' kdr';
+        list($casual, $ranked) = get_kdr_both($attr[0]);
+        $recent_id = get_recent_id($attr[0]);
+        $div_id = $recent_id . ' kdr';
         $str  = '<div id="' . $div_id . '" style="width:100%; height:400px;"></div>';
         $str .= '<script>jQuery(function($) {';
         $str .= "var myChart = Highcharts.chart('" . $div_id . "', {";
@@ -192,7 +203,7 @@
                         type: 'spline'
                     },
                     title: {";
-        $str .= "       text: '" . $ID . " K/D Charts'";
+        $str .= "       text: '" . $recent_id . " K/D Charts'";
         $str .= "   },
                     yAxis: {
                         title: {
@@ -266,9 +277,9 @@
     add_shortcode('kdr_graph', 'kdr_graph');
 
     function wlr_graph($attr){
-        $ID = $attr[0];
-        list($casual, $ranked) = get_wlr_both($ID);
-        $div_id = $ID . ' wlr';
+        list($casual, $ranked) = get_wlr_both($attr[0]);
+        $recent_id = get_recent_id($attr[0]);
+        $div_id = $recent_id . ' wlr';
         $str  = '<div id="' . $div_id . '" style="width:100%; height:100%;"></div>';
         $str .= '<script>jQuery(function($) {';
         $str .= "var myChart = Highcharts.chart('" . $div_id . "', {";
@@ -276,7 +287,7 @@
                         type: 'spline'
                     },
                     title: {";
-        $str .= "       text: '" . $ID . " W/L Charts'";
+        $str .= "       text: '" . $recent_id . " W/L Charts'";
         $str .= "   },
                     yAxis: {
                         title: {
@@ -355,6 +366,7 @@
         $data = [];
         $d_data = [];
         $tmp = [];
+        $recent_id = $userdata->id;
         foreach ($userdata->operator as $operator) {
             $name = "'".$operator->name."'";
             $pick = $operator->pick;
@@ -375,7 +387,7 @@
             $count = $count + 1;
         };
         $data[] = "{ name: 'Other', y: " . $other . ", drilldown: 'Other' }";
-        return array(implode(',',$data),implode(',',$d_data));
+        return array(implode(',',$data), implode(',',$d_data), $recent_id);
     }
 
     function get_defenser_pick($attr){
@@ -383,6 +395,7 @@
         $data = [];
         $d_data =[];
         $tmp = [];
+        $recent_id = $userdata->id;
         foreach ($userdata->operator as $operator) {
             $name = "'".$operator->name."'";
             $pick = $operator->pick;
@@ -403,13 +416,12 @@
             $count = $count + 1;
         };
         $data[] = "{ name: 'Other', y: " . $other . ", drilldown: 'Other' }";
-        return array(implode(',',$data),implode(',',$d_data));
+        return array(implode(',',$data), implode(',',$d_data), $recent_id);
     }
 
     function attacker_pick_graph($attr){
-        $ID = $attr[0];
-        list($data, $d_data) = get_attacker_pick($ID);
-        $div_id = $ID . ' atpg';
+        list($data, $d_data, $recent_id) = get_attacker_pick($attr[0]);
+        $div_id = $recent_id . ' atpg';
         $str  = '<div id="' . $div_id . '" style="width:100%; height:100%;"></div>';
         $str .= '<script>jQuery(function($) {';
         $str .= "var myChart = Highcharts.chart('" . $div_id . "', {";
@@ -417,7 +429,7 @@
                         type: 'pie'
                     },
                     title: {";
-        $str .= "       text: '" . $ID . " Attacker Pick Ratio'";
+        $str .= "       text: '" . $recent_id . " Attacker Pick Ratio'";
         $str .= "   },
                     tooltip: {
                         pointFormat: '{series.name}: {point.percentage:.1f}%'
@@ -453,7 +465,8 @@
                                     series: {
                                     dataLabels: {
                                       enabled: false
-                                    }
+                                    },
+                                    showInLegend: true
                                   }
                                 },
                                 credits: {
@@ -470,9 +483,8 @@
     add_shortcode('attacker_pick_graph', 'attacker_pick_graph');
 
     function defenser_pick_graph($attr){
-        $ID = $attr[0];
-        list($data, $d_data) = get_defenser_pick($ID);
-        $div_id = $ID . ' dfpg';
+        list($data, $d_data, $recent_id) = get_defenser_pick($attr[0]);
+        $div_id = $recent_id . ' dfpg';
         $str  = '<div id="' . $div_id . '" style="width:100%; height:100%;"></div>';
         $str .= '<script>jQuery(function($) {';
         $str .= "var myChart = Highcharts.chart('" . $div_id . "', {";
@@ -480,7 +492,7 @@
                         type: 'pie'
                     },
                     title: {";
-        $str .= "       text: '" . $ID . " Defenser Pick Ratio'";
+        $str .= "       text: '" . $recent_id . " Defenser Pick Ratio'";
         $str .= "   },
                     tooltip: {
                         pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
@@ -518,7 +530,8 @@
                                     series: {
                                     dataLabels: {
                                       enabled: false
-                                    }
+                                    },
+                                    showInLegend: true
                                   }
                                 },
                                 credits: {
